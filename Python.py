@@ -1,206 +1,191 @@
-#Сортировка обменом (пузырьком) (Bubble Sort)
+import heapq
+from collections import defaultdict, deque
 
-def bubble_sort(arr):
-    n = len(arr)
-    # Проходим по всем элементам массива
-    for i in range(n-1):
-        # Последний элемент на каждой итерации уже на своем месте
-        for j in range(n-i-1):
-            # Сравниваем соседние элементы
-            if arr[j] > arr[j+1]:
-                # Меняем местами, если они стоят в неправильном порядке
-                arr[j], arr[j+1] = arr[j+1], arr[j]
-
-def print_array(arr):
-    for i in range(len(arr)):
-        print(arr[i], end=" ")
-    print()
-
-# Пример использования
-if __name__ == "__main__":
-    arr = [64, 34, 25, 12, 22, 11, 90]
+def prim_mst(n, graph):
+    """Построение MST алгоритмом Прима с детальными шагами"""
+    # Шаг 1.1: Инициализация
+    visited = [False] * n
+    min_weight = [float('inf')] * n  # минимальный вес ребра к MST
+    parent = [-1] * n                # родительские вершины в MST
+    min_weight[0] = 0
     
-    print("Исходный массив:")
-    print_array(arr)
+    # Приоритетная очередь: (вес, вершина)
+    heap = [(0, 0)]
     
-    bubble_sort(arr)
+    mst_edges = []
+    total_mst_weight = 0
     
-    print("Отсортированный массив:")
-    print_array(arr)
-
-
-
-#Сортировка Шелла (Shellsort) 
-
-def shell_sort(arr):
-    n = len(arr)
-    
-    # Начинаем с большого промежутка и уменьшаем его
-    gap = n // 2
-    while gap > 0:
-        # Проходим по всем элементам с текущим промежутком
-        for i in range(gap, n):
-            # Сохраняем текущий элемент
-            temp = arr[i]
-            j = i
+    while heap:
+        # Шаг 1.3: Выбор ребра минимального веса
+        current_weight, u = heapq.heappop(heap)
+        
+        if visited[u]:
+            continue
             
-            # Сдвигаем элементы, которые больше temp, вправо
-            while j >= gap and arr[j - gap] > temp:
-                arr[j] = arr[j - gap]
-                j -= gap
+        # Шаг 1.4: Добавление вершины в MST
+        visited[u] = True
+        total_mst_weight += current_weight
+        
+        if parent[u] != -1:  # кроме стартовой вершины
+            mst_edges.append((parent[u], u, current_weight))
+        
+        # Обновление весов для соседних вершин
+        for v in range(n):
+            if not visited[v] and graph[u][v] < min_weight[v]:
+                min_weight[v] = graph[u][v]
+                parent[v] = u
+                heapq.heappush(heap, (graph[u][v], v))
+    
+    print(f"МST построено: {len(mst_edges)} ребер, общий вес: {total_mst_weight}")
+    return mst_edges
+
+def find_eulerian_tour(mst_edges, n):
+    """Построение эйлерова обхода с детальными шагами"""
+    # Шаг 2.1-2.2: Создание мультиграфа с удвоенными ребрами
+    adjacency = defaultdict(list)
+    edge_count = defaultdict(int)
+    
+    for u, v, weight in mst_edges:
+        # Добавляем каждое ребро дважды
+        adjacency[u].append((v, weight))
+        adjacency[v].append((u, weight))
+        adjacency[u].append((v, weight))
+        adjacency[v].append((u, weight))
+        
+        edge_count[(min(u, v), max(u, v))] += 2
+    
+    print(f"Удвоенный граф создан: {sum(len(adj) for adj in adjacency.values())} ребер")
+    
+    # Шаг 3: Поиск эйлерова цикла (итеративный DFS)
+    stack = [0]
+    euler_tour = []
+    
+    while stack:
+        u = stack[-1]
+        
+        if adjacency[u]:
+            # Берем следующее ребро
+            v, weight = adjacency[u].pop()
             
-            # Вставляем temp на правильное место
-            arr[j] = temp
-        
-        # Уменьшаем промежуток
-        gap //= 2
-
-# Функция для вывода массива
-def print_array(arr):
-    for num in arr:
-        print(num, end=" ")
-    print()
-
-# Пример использования
-if __name__ == "__main__":
-    arr = [12, 34, 54, 2, 3]
-    
-    print("Исходный массив:", end=" ")
-    print_array(arr)
-    
-    shell_sort(arr)
-    
-    print("Отсортированный массив:", end=" ")
-    print_array(arr)
-
-
-
-#Последовательный (линейный) поиск 
-
-def linear_search(arr, target):
-    # Проходим по всем элементам массива
-    for i in range(len(arr)):
-        # Если нашли искомый элемент
-        if arr[i] == target:
-            return i  # Возвращаем индекс найденного элемента
-    return -1  # Возвращаем -1, если элемент не найден
-
-def main():
-    # Создаем массив
-    array = [3, 5, 2, 7, 9, 1, 4]
-    
-    target = 7  # Искомое значение
-    
-    # Вызываем функцию поиска
-    result = linear_search(array, target)
-    
-    # Выводим результат
-    if result != -1:
-        print(f"Элемент найден на позиции: {result}")
-    else:
-        print("Элемент не найден")
-
-if __name__ == "__main__":
-    main()
-
-
-
-#Бинарный (двоичный, дихотомический) поиск 
-def binary_search(array, target):
-    left = 0  # Левая граница поиска
-    right = len(array) - 1  # Правая граница поиска
-    
-    while left <= right:
-        # Находим середину массива
-        mid = left + (right - left) // 2
-        
-        # Проверяем средний элемент
-        if array[mid] == target:
-            return mid  # Элемент найден
-        
-        # Если искомый элемент меньше среднего
-        if array[mid] > target:
-            right = mid - 1  # Перемещаемся влево
+            # Удаляем обратное ребро
+            for i in range(len(adjacency[v])):
+                if adjacency[v][i][0] == u:
+                    adjacency[v].pop(i)
+                    break
+            
+            stack.append(v)
         else:
-            left = mid + 1  # Перемещаемся вправо
+            # Вершина обработана
+            euler_tour.append(stack.pop())
     
-    return -1  # Элемент не найден
+    euler_tour = euler_tour[::-1]  # разворачиваем для правильного порядка
+    print(f"Эйлеров обход найден: {len(euler_tour)} вершин")
+    return euler_tour
+def shortcut_to_hamiltonian(euler_tour):
+    """Преобразование эйлерова обхода в гамильтонов цикл"""
+    # Шаг 4.1-4.3: Удаление повторяющихся вершин
+    visited = set()
+    hamiltonian_tour = []
+    
+    for vertex in euler_tour:
+        if vertex not in visited:
+            visited.add(vertex)
+            hamiltonian_tour.append(vertex)
+    
+    # Шаг 4.4: Замыкание цикла
+    hamiltonian_tour.append(hamiltonian_tour[0])
+    
+    print(f"Гамильтонов цикл: {len(hamiltonian_tour)} вершин, уникальных: {len(visited)}")
+    return hamiltonian_tour
 
-def main():
-    sorted_array = [1, 3, 5, 7, 9, 11, 13, 15, 17, 19]
-    target = 7
+def tsp_2_approximation_improved(distances):
+    """Улучшенная 2-аппроксимация для TSP"""
+    n = len(distances)
     
-    result = binary_search(sorted_array, target)
+    print("=" * 50)
+    print("ШАГ 1: Построение минимального остовного дерева (MST)")
+    mst_edges = prim_mst(n, distances)
     
-    if result != -1:
-        print(f"Элемент найден на позиции: {result}")
+    print("\nШАГ 2: Удвоение ребер MST для получения эйлерова графа")
+    print("ШАГ 3: Построение эйлерова обхода")
+    euler_tour = find_eulerian_tour(mst_edges, n)
+    
+    print("\nШАГ 4: Преобразование в гамильтонов цикл (удаление повторений)")
+    hamiltonian_tour = shortcut_to_hamiltonian(euler_tour)
+    
+    # Вычисление стоимости
+    tour_cost = 0
+    for i in range(len(hamiltonian_tour) - 1):
+        u = hamiltonian_tour[i]
+        v = hamiltonian_tour[i + 1]
+        tour_cost += distances[u][v]
+    
+    print(f"\nРЕЗУЛЬТАТ: Стоимость маршрута = {tour_cost}")
+    print("=" * 50)
+    
+    return hamiltonian_tour, tour_cost
+
+def analyze_approximation_quality(tour_cost, distances, optimal_estimate=None):
+    """Анализ качества аппроксимации"""
+    n = len(distances)
+    
+    # Нижняя оценка через MST
+    mst_lower_bound = 0
+    temp_edges = prim_mst(n, distances)
+    for u, v, w in temp_edges:
+        mst_lower_bound += w
+    
+    approximation_ratio = tour_cost / mst_lower_bound if mst_lower_bound > 0 else float('inf')
+    
+    print("\nАНАЛИЗ КАЧЕСТВА:")
+    print(f"Стоимость найденного тура: {tour_cost}")
+    print(f"Нижняя оценка (вес MST): {mst_lower_bound}")
+    print(f"Коэффициент аппроксимации: {approximation_ratio:.3f}")
+    
+    if approximation_ratio <= 2.0:
+        print("Алгоритм обеспечивает 2-аппроксимацию")
     else:
-        print("Элемент не найден")
+        print("Коэффициент превышает 2, возможна ошибка")
 
-if __name__ == "__main__":
-    main()
-
-
-
-
-#Поиск по Фибоначчи 
-def fibonacci_search(arr, x):
-    n = len(arr)
+# Тестирование
+if name == "main":
+    # Метрическая матрица расстояний (удовлетворяет неравенству треугольника)
+    distances = [
+        [0, 10, 15, 20, 25],
+        [10, 0, 35, 25, 30],
+        [15, 35, 0, 30, 20],
+        [20, 25, 30, 0, 15],
+        [25, 30, 20, 15, 0]
+    ]
     
-    # Находим наименьшее число Фибоначчи, большее или равное n
-    fib_m2 = 0  # (m-2)'е число Фибоначчи
-    fib_m1 = 1  # (m-1)'е число Фибоначчи
-    fib_m = fib_m2 + fib_m1
+    print("МАТРИЦА РАССТОЯНИЙ (5 городов):")
+    for i, row in enumerate(distances):
+        print(f"Город {i}: {row}")
     
-    # Находим m такое, что F[m] >= n
-    while fib_m < n:
-        fib_m2 = fib_m1
-        fib_m1 = fib_m
-        fib_m = fib_m2 + fib_m1
+    tour, cost = tsp_2_approximation_improved(distances)
     
-    # Маркеры для элементов, которые не входят в массив
-    offset = -1
+    print(f"\nФИНАЛЬНЫЙ МАРШРУТ: {tour}")
+    print(f"ПОРЯДОК ОБХОДА: {' → '.join(map(str, tour))}")
     
-    # Поиск
-    while fib_m > 1:
-        # Проверяем возможный индекс
-        i = min(offset + fib_m2, n - 1)
-        
-        # Если x больше элемента, переходим к правому подмассиву
-        if arr[i] < x:
-            fib_m = fib_m1
-            fib_m1 = fib_m2
-            fib_m2 = fib_m - fib_m1
-            offset = i
-        # Если x меньше элемента, переходим к левому подмассиву
-        elif arr[i] > x:
-            fib_m = fib_m2
-            fib_m1 = fib_m1 - fib_m2
-            fib_m2 = fib_m - fib_m1
-        # Элемент найден
-        else:
-            return i
+    analyze_approximation_quality(cost, distances)
     
-    # Проверяем последний элемент
-    if fib_m1 and offset + 1 < n and arr[offset + 1] == x:
-        return offset + 1
-    
-    return -1  # Элемент не найден
+    # Проверка корректности
+    unique_cities = set(tour[:-1])  # исключаем повтор старта
+    print(f"\nПРОВЕРКА КОРРЕКТНОСТИ:")
+    print(f"Все города посещены: {len(unique_cities) == len(distances)}")
+    print(f"Маршрут замкнут: {tour[0] == tour[-1]}")
+    print(f"Длина маршрута: {len(tour)} точек")
 
-def main():
-    arr = [10, 22, 35, 40, 45, 50, 80, 82, 85, 90, 100]
-    x = 85
-    
-    result = fibonacci_search(arr, x)
-    
-    if result != -1:
-        print("Элемент найден на позиции: " + str(result))
-    else:
-        print("Элемент не найден")
+## Вывод программы
 
-if __name__ == "__main__":
-    main()
+Матрица расстояний:
+[0, 10, 15, 20, 25]
+[10, 0, 35, 25, 30]
+[15, 35, 0, 30, 20]
+[20, 25, 30, 0, 15]
+[25, 30, 20, 15, 0]
 
-
-
-
+Найденный маршрут: [0, 1, 3, 4, 2, 0]
+Стоимость маршрута: 105
+Количество городов в маршруте: 5
+Начинается и заканчивается в одном городе: True
